@@ -1267,47 +1267,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AdminUsageStats"
-                },
-                "example": {
-                  "success": true,
-                  "data": {
-                    "user": {
-                      "id": 5,
-                      "name": "John Doe",
-                      "email": "john@example.com",
-                      "role": "domain_admin"
-                    },
-                    "usage": {
-                      "domains": {
-                        "current": 3,
-                        "max": 10,
-                        "percentage": 30.0
-                      },
-                      "email_accounts": {
-                        "current": 45,
-                        "max": 100,
-                        "percentage": 45.0
-                      },
-                      "quota": {
-                        "current": 5120,
-                        "max": 10240,
-                        "percentage": 50.0,
-                        "current_formatted": "5.0 GB",
-                        "max_formatted": "10.0 GB"
-                      }
-                    },
-                    "domains": [
-                      {
-                        "domain_id": 1,
-                        "domain_name": "example.com",
-                        "current_accounts": 25,
-                        "max_accounts": 50,
-                        "available": 25,
-                        "percentage": 50.0,
-                        "is_full": false
-                      }
-                    ]
-                  }
                 }
               }
             }
@@ -1324,3 +1283,711 @@
     "/domains/{identifier}": {
       "get": {
         "summary": "Get domain details",
+        "description": "Get detailed information about a specific domain including statistics and aliases.\n\n**Required Token Ability:** `domains:view`",
+        "tags": ["Domains"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/identifierParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "domain": {
+                          "$ref": "#/components/schemas/DomainDetail"
+                        },
+                        "statistics": {
+                          "$ref": "#/components/schemas/DomainStatistics"
+                        },
+                        "aliases": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/DomainAlias"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update a domain",
+        "description": "Update domain settings. System admins can update any domain, domain admins can only update domains they manage.\n\n**Required Token Ability:** `domains:update`",
+        "tags": ["Domains"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/identifierParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDomainRequest"
+              },
+              "example": {
+                "enabled": true,
+                "max_accounts": 150,
+                "quotas": 20480,
+                "spamassassin": true,
+                "sa_tag": 3,
+                "sa_refuse": 10,
+                "avscan": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Domain updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Domain updated successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DomainDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - No data to update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a domain",
+        "description": "Delete a domain and all associated data. Only system administrators can delete domains.\n\n**Required Token Ability:** `domains:delete`",
+        "tags": ["Domains"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/identifierParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Domain 'example.com' has been deleted successfully!"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "deleted_domain": {
+                          "type": "string",
+                          "example": "example.com"
+                        },
+                        "domain_id": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "users_removed": {
+                          "type": "integer",
+                          "example": 45
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Partially update a domain",
+        "description": "Partially update domain settings. Similar to PUT but only sends changed fields.\n\n**Required Token Ability:** `domains:update`",
+        "tags": ["Domains"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/identifierParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDomainRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Domain updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Domain updated successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DomainDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - No data to update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/domains/{identifier}/activate": {
+      "post": {
+        "summary": "Activate a domain",
+        "description": "Activate a disabled domain. System admins can activate any domain, domain admins can only activate domains they manage.\n\n**Required Token Ability:** `domains:update`",
+        "tags": ["Domains"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/identifierParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain activated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Domain 'example.com' has been activated successfully!"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Domain"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/domains/{identifier}/deactivate": {
+      "post": {
+        "summary": "Deactivate a domain",
+        "description": "Deactivate an active domain. System admins can deactivate any domain, domain admins can only deactivate domains they manage.\n\n**Required Token Ability:** `domains:update`",
+        "tags": ["Domains"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/identifierParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain deactivated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Domain 'example.com' has been deactivated successfully!"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Domain"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/domains/{identifier}/statistics": {
+      "get": {
+        "summary": "Get domain statistics",
+        "description": "Get detailed usage statistics for a domain including user counts, quota usage, and account availability.\n\n**Required Token Ability:** `domains:statistics`",
+        "tags": ["Domain Statistics"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/identifierParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainUsageStats"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/domains/{identifier}/users": {
+      "get": {
+        "summary": "Get domain users",
+        "description": "Get all users assigned to a domain with their roles. Only domain admins and system admins can view this.\n\n**Required Token Ability:** `domains:users`",
+        "tags": ["Domain Assignments"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/identifierParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain users retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "domain": {
+                          "type": "string",
+                          "example": "example.com"
+                        },
+                        "domain_id": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "users": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/DomainUser"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/domains/{identifier}/assign": {
+      "post": {
+        "summary": "Assign user to domain",
+        "description": "Assign a user to a domain with a specific role. System admins can assign any user, domain admins can only assign users to domains they manage.\n\n**Required Token Ability:** `domains:assign`",
+        "tags": ["Domain Assignments"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/identifierParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignUserRequest"
+              },
+              "examples": {
+                "domain_admin": {
+                  "summary": "Assign as Domain Admin",
+                  "value": {
+                    "user": "john@example.com",
+                    "role": "domain_admin"
+                  }
+                },
+                "viewer": {
+                  "summary": "Assign as Viewer",
+                  "value": {
+                    "user": "jane@example.com",
+                    "role": "viewer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User assigned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "User 'john@example.com' has been assigned as Administrator to domain 'example.com' successfully!"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "string",
+                          "example": "john@example.com"
+                        },
+                        "user_id": {
+                          "type": "integer",
+                          "example": 5
+                        },
+                        "domain": {
+                          "type": "string",
+                          "example": "example.com"
+                        },
+                        "domain_id": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "role": {
+                          "type": "string",
+                          "example": "domain_admin"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "User role updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "User 'john@example.com' role updated to 'domain_admin' for domain 'example.com'"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "string",
+                          "example": "john@example.com"
+                        },
+                        "domain": {
+                          "type": "string",
+                          "example": "example.com"
+                        },
+                        "role": {
+                          "type": "string",
+                          "example": "domain_admin"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/domains/{identifier}/unassign": {
+      "post": {
+        "summary": "Unassign user from domain",
+        "description": "Remove a user's assignment from a domain. Prevents removing the last domain administrator.\n\n**Required Token Ability:** `domains:unassign`",
+        "tags": ["Domain Assignments"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/identifierParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnassignUserRequest"
+              },
+              "example": {
+                "user": "john@example.com"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User unassigned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "User 'john@example.com' has been unassigned from domain 'example.com' successfully!"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "string",
+                          "example": "john@example.com"
+                        },
+                        "user_id": {
+                          "type": "integer",
+                          "example": 5
+                        },
+                        "domain": {
+                          "type": "string",
+                          "example": "example.com"
+                        },
+                        "domain_id": {
+                          "type": "integer",
+                          "example": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}
