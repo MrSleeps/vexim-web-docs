@@ -1,0 +1,1326 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "VExim Web UI Domain Management API",
+    "description": "API for managing VExim domains with Sanctum token-based authentication. All requests require a valid Bearer token.",
+    "version": "1.0.0",
+    "license": {
+      "name": "GPL-3.0-only",
+      "url": "https://github.com/MrSleeps/VExim-Web-UI/LICENCE"
+    }
+  },
+  "tags": [
+    {
+      "name": "Domains",
+      "description": "Domain management operations"
+    },
+    {
+      "name": "Domain Assignments",
+      "description": "User assignment operations for domains"
+    },
+    {
+      "name": "Domain Statistics",
+      "description": "Domain statistics and metrics"
+    },
+    {
+      "name": "User",
+      "description": "User information from token"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Sanctum Token",
+        "description": "Enter your Sanctum token in the format: Bearer {token}\n\nTokens are generated locally by Sanctum. Example: Bearer 1|abcdefghijklmnopqrstuvwxyz..."
+      }
+    },
+    "schemas": {
+      "Domain": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "domain": {
+            "type": "string",
+            "example": "example.com"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["local", "alias", "remote"],
+            "example": "local"
+          },
+          "enabled": {
+            "type": "boolean",
+            "example": true
+          },
+          "status": {
+            "type": "string",
+            "enum": ["enabled", "disabled"],
+            "example": "enabled"
+          },
+          "maildir": {
+            "type": "string",
+            "example": "/var/mail/example.com"
+          },
+          "uid": {
+            "type": "integer",
+            "example": 8
+          },
+          "gid": {
+            "type": "integer",
+            "example": 8
+          },
+          "max_accounts": {
+            "type": "integer",
+            "nullable": true,
+            "example": 100
+          },
+          "quotas": {
+            "type": "integer",
+            "nullable": true,
+            "example": 10240
+          },
+          "maxmsgsize": {
+            "type": "integer",
+            "nullable": true,
+            "example": 10485760
+          },
+          "spamassassin": {
+            "type": "boolean",
+            "example": false
+          },
+          "sa_tag": {
+            "type": "integer",
+            "nullable": true,
+            "example": 5
+          },
+          "sa_refuse": {
+            "type": "integer",
+            "nullable": true,
+            "example": 15
+          },
+          "avscan": {
+            "type": "boolean",
+            "example": false
+          },
+          "blocklists": {
+            "type": "boolean",
+            "example": false
+          },
+          "dkim_enabled": {
+            "type": "boolean",
+            "example": false
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-01-15T10:30:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-01-15T10:30:00Z"
+          },
+          "administrators": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserBrief"
+            }
+          }
+        }
+      },
+      "DomainDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Domain"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "aliases": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DomainAlias"
+                }
+              },
+              "statistics": {
+                "$ref": "#/components/schemas/DomainStatistics"
+              }
+            }
+          }
+        ]
+      },
+      "DomainAlias": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "alias": {
+            "type": "string",
+            "example": "alias.com"
+          },
+          "domain_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DomainStatistics": {
+        "type": "object",
+        "properties": {
+          "total_users": {
+            "type": "integer",
+            "example": 45
+          },
+          "administrator_count": {
+            "type": "integer",
+            "example": 3
+          },
+          "quota_usage_mb": {
+            "type": "integer",
+            "example": 5120
+          },
+          "accounts_available": {
+            "type": "integer",
+            "nullable": true,
+            "example": 55
+          },
+          "domain_name": {
+            "type": "string",
+            "example": "example.com"
+          },
+          "domain_id": {
+            "type": "integer",
+            "example": 1
+          }
+        }
+      },
+      "DomainUsageStats": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "example": "example.com"
+          },
+          "domain_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "statistics": {
+            "$ref": "#/components/schemas/DomainStatistics"
+          },
+          "alias_count": {
+            "type": "integer",
+            "example": 5
+          },
+          "total_users": {
+            "type": "integer",
+            "example": 45
+          },
+          "quota_usage_mb": {
+            "type": "integer",
+            "example": 5120
+          },
+          "quota_limit_mb": {
+            "type": "integer",
+            "nullable": true,
+            "example": 10240
+          },
+          "accounts_available": {
+            "type": "integer",
+            "nullable": true,
+            "example": 55
+          }
+        }
+      },
+      "UserBrief": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 5
+          },
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "john@example.com"
+          }
+        }
+      },
+      "DomainUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 5
+          },
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "john@example.com"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["domain_admin", "viewer"],
+            "example": "domain_admin"
+          },
+          "assigned_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-01-15T10:30:00Z"
+          }
+        }
+      },
+      "AdminUsageStats": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "example": 5
+              },
+              "name": {
+                "type": "string",
+                "example": "John Doe"
+              },
+              "email": {
+                "type": "string",
+                "format": "email",
+                "example": "john@example.com"
+              },
+              "role": {
+                "type": "string",
+                "example": "domain_admin"
+              }
+            }
+          },
+          "usage": {
+            "type": "object",
+            "properties": {
+              "domains": {
+                "type": "object",
+                "properties": {
+                  "current": {
+                    "type": "integer",
+                    "example": 3
+                  },
+                  "max": {
+                    "type": "integer",
+                    "example": 10
+                  },
+                  "percentage": {
+                    "type": "number",
+                    "format": "float",
+                    "example": 30.0
+                  }
+                }
+              },
+              "alias_domains": {
+                "type": "object",
+                "properties": {
+                  "current": {
+                    "type": "integer",
+                    "example": 1
+                  },
+                  "max": {
+                    "type": "integer",
+                    "example": 5
+                  },
+                  "percentage": {
+                    "type": "number",
+                    "format": "float",
+                    "example": 20.0
+                  }
+                }
+              },
+              "email_accounts": {
+                "type": "object",
+                "properties": {
+                  "current": {
+                    "type": "integer",
+                    "example": 45
+                  },
+                  "max": {
+                    "type": "integer",
+                    "example": 100
+                  },
+                  "percentage": {
+                    "type": "number",
+                    "format": "float",
+                    "example": 45.0
+                  }
+                }
+              },
+              "alias_accounts": {
+                "type": "object",
+                "properties": {
+                  "current": {
+                    "type": "integer",
+                    "example": 10
+                  },
+                  "max": {
+                    "type": "integer",
+                    "example": 50
+                  },
+                  "percentage": {
+                    "type": "number",
+                    "format": "float",
+                    "example": 20.0
+                  }
+                }
+              },
+              "quota": {
+                "type": "object",
+                "properties": {
+                  "current": {
+                    "type": "integer",
+                    "example": 5120
+                  },
+                  "max": {
+                    "type": "integer",
+                    "example": 10240
+                  },
+                  "percentage": {
+                    "type": "number",
+                    "format": "float",
+                    "example": 50.0
+                  },
+                  "current_formatted": {
+                    "type": "string",
+                    "example": "5.0 GB"
+                  },
+                  "max_formatted": {
+                    "type": "string",
+                    "example": "10.0 GB"
+                  }
+                }
+              }
+            }
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "domain_id": {
+                  "type": "integer",
+                  "example": 1
+                },
+                "domain_name": {
+                  "type": "string",
+                  "example": "example.com"
+                },
+                "current_accounts": {
+                  "type": "integer",
+                  "example": 45
+                },
+                "max_accounts": {
+                  "type": "integer",
+                  "example": 100
+                },
+                "available": {
+                  "type": "integer",
+                  "nullable": true,
+                  "example": 55
+                },
+                "percentage": {
+                  "type": "number",
+                  "format": "float",
+                  "example": 45.0
+                },
+                "is_full": {
+                  "type": "boolean",
+                  "example": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "StoreDomainRequest": {
+        "type": "object",
+        "required": ["domain", "type"],
+        "properties": {
+          "domain": {
+            "type": "string",
+            "pattern": "^[a-z0-9.-]+\\.[a-z]{2,}$",
+            "example": "example.com",
+            "description": "Domain name (lowercase, valid format)"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["local", "alias"],
+            "example": "local",
+            "description": "Domain type: local (mail handled locally) or alias (forward to primary domain)"
+          },
+          "primary_domain_id": {
+            "type": "string",
+            "example": "1",
+            "description": "Required for alias domains. Primary domain ID or name"
+          },
+          "maildir": {
+            "type": "string",
+            "example": "/var/mail/example.com",
+            "description": "Mail directory path (default: /var/mail/{domain})"
+          },
+          "uid": {
+            "type": "integer",
+            "example": 8,
+            "description": "User ID for mail files (default: 8)"
+          },
+          "gid": {
+            "type": "integer",
+            "example": 8,
+            "description": "Group ID for mail files (default: 8)"
+          },
+          "max_accounts": {
+            "type": "integer",
+            "minimum": 1,
+            "example": 100,
+            "description": "Maximum number of email accounts (null = unlimited)"
+          },
+          "quotas": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 10240,
+            "description": "Storage quota in MB (0 = unlimited)"
+          },
+          "maxmsgsize": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 10485760,
+            "description": "Maximum message size in bytes (0 = system default)"
+          },
+          "spamassassin": {
+            "type": "boolean",
+            "example": false,
+            "description": "Enable SpamAssassin spam filtering"
+          },
+          "sa_tag": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 5,
+            "description": "Spam tag score (required if spamassassin is true)"
+          },
+          "sa_refuse": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 15,
+            "description": "Spam refuse score (required if spamassassin is true)"
+          },
+          "avscan": {
+            "type": "boolean",
+            "example": false,
+            "description": "Enable virus scanning"
+          },
+          "blocklists": {
+            "type": "boolean",
+            "example": false,
+            "description": "Enable blocklist filtering"
+          },
+          "admin_user_id": {
+            "type": "string",
+            "example": "5",
+            "description": "User ID or email to assign as initial administrator"
+          }
+        }
+      },
+      "UpdateDomainRequest": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "pattern": "^[a-z0-9.-]+\\.[a-z]{2,}$",
+            "example": "updated-example.com",
+            "description": "Domain name (only for local domains)"
+          },
+          "enabled": {
+            "type": "boolean",
+            "example": true
+          },
+          "maildir": {
+            "type": "string",
+            "example": "/var/mail/updated-example.com"
+          },
+          "uid": {
+            "type": "integer",
+            "example": 8
+          },
+          "gid": {
+            "type": "integer",
+            "example": 8
+          },
+          "max_accounts": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true,
+            "example": 150
+          },
+          "quotas": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true,
+            "example": 20480
+          },
+          "maxmsgsize": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true,
+            "example": 20971520
+          },
+          "spamassassin": {
+            "type": "boolean",
+            "example": true
+          },
+          "sa_tag": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true,
+            "example": 3
+          },
+          "sa_refuse": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true,
+            "example": 10
+          },
+          "avscan": {
+            "type": "boolean",
+            "example": true
+          },
+          "blocklists": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "AssignUserRequest": {
+        "type": "object",
+        "required": ["user"],
+        "properties": {
+          "user": {
+            "type": "string",
+            "example": "john@example.com",
+            "description": "User ID or email to assign"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["domain_admin", "viewer"],
+            "example": "domain_admin",
+            "description": "Role to assign (default: domain_admin)"
+          }
+        }
+      },
+      "UnassignUserRequest": {
+        "type": "object",
+        "required": ["user"],
+        "properties": {
+          "user": {
+            "type": "string",
+            "example": "john@example.com",
+            "description": "User ID or email to unassign"
+          }
+        }
+      },
+      "SearchDomainRequest": {
+        "type": "object",
+        "required": ["search"],
+        "properties": {
+          "search": {
+            "type": "string",
+            "example": "example",
+            "description": "Search term to find domains"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["local", "alias", "remote"],
+            "example": "local"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["enabled", "disabled"],
+            "example": "enabled"
+          },
+          "sort_by": {
+            "type": "string",
+            "enum": ["domain", "type", "created_at", "domain_id"],
+            "example": "domain"
+          },
+          "sort_order": {
+            "type": "string",
+            "enum": ["asc", "desc"],
+            "example": "asc"
+          },
+          "per_page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "example": 15
+          }
+        }
+      },
+      "TokenUserResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "example": 1
+              },
+              "name": {
+                "type": "string",
+                "example": "System Admin"
+              },
+              "email": {
+                "type": "string",
+                "format": "email",
+                "example": "admin@vexim.com"
+              },
+              "roles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "example": ["system_admin"]
+              },
+              "is_system_admin": {
+                "type": "boolean",
+                "example": true
+              },
+              "is_domain_admin": {
+                "type": "boolean",
+                "example": false
+              },
+              "domains": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "example": ["example.com", "test.com"]
+              },
+              "token_abilities": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "example": [
+                  "domains:view",
+                  "domains:create",
+                  "domains:update",
+                  "domains:delete",
+                  "domains:assign",
+                  "domains:unassign",
+                  "domains:statistics",
+                  "domains:users"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Token does not have required ability: domains:create"
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "example": {
+              "domain": ["Domain already exists"]
+            }
+          },
+          "error": {
+            "type": "string",
+            "example": "Database connection failed"
+          },
+          "required_ability": {
+            "type": "string",
+            "example": "domains:create"
+          },
+          "token_abilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["domains:view", "domains:statistics"]
+          }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Domain created successfully"
+          },
+          "data": {
+            "type": "object"
+          }
+        }
+      },
+      "DomainCollection": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Domain"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "example": 50
+              },
+              "per_page": {
+                "type": "integer",
+                "example": 15
+              },
+              "current_page": {
+                "type": "integer",
+                "example": 1
+              },
+              "last_page": {
+                "type": "integer",
+                "example": 4
+              }
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "identifierParam": {
+        "name": "identifier",
+        "in": "path",
+        "required": true,
+        "description": "Domain ID or domain name",
+        "schema": {
+          "type": "string"
+        },
+        "example": "1"
+      },
+      "pageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "Page number for pagination",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "perPageParam": {
+        "name": "per_page",
+        "in": "query",
+        "description": "Number of items per page",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 15
+        }
+      },
+      "typeParam": {
+        "name": "type",
+        "in": "query",
+        "description": "Filter by domain type",
+        "schema": {
+          "type": "string",
+          "enum": ["local", "alias", "remote"]
+        }
+      },
+      "statusParam": {
+        "name": "status",
+        "in": "query",
+        "description": "Filter by domain status",
+        "schema": {
+          "type": "string",
+          "enum": ["enabled", "disabled"]
+        }
+      },
+      "searchParam": {
+        "name": "search",
+        "in": "query",
+        "description": "Search term for domain names",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "401 Unauthorized - No valid token provided or token expired",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "message": "Unauthenticated"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "403 Forbidden - Token does not have the required ability for this endpoint",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "message": "Token does not have required ability: domains:create",
+              "required_ability": "domains:create",
+              "token_abilities": ["domains:view", "domains:statistics"]
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "404 Not Found - The requested resource does not exist",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "message": "Domain 'example.com' not found"
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "422 Unprocessable Entity - Validation failed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "message": "Validation failed",
+              "errors": {
+                "domain": ["The domain format is invalid."],
+                "type": ["The type field is required."]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/user": {
+      "get": {
+        "summary": "Get user information from token",
+        "description": "Get the authenticated user's information, roles, and token abilities from the Bearer token.\n\n**Required Token Ability:** None (just needs valid token)",
+        "tags": ["User"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenUserResponse"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": 1,
+                    "name": "System Admin",
+                    "email": "admin@vexim.com",
+                    "roles": ["system_admin"],
+                    "is_system_admin": true,
+                    "is_domain_admin": false,
+                    "domains": ["*"],
+                    "token_abilities": [
+                      "domains:view",
+                      "domains:create",
+                      "domains:update",
+                      "domains:delete",
+                      "domains:assign",
+                      "domains:unassign",
+                      "domains:statistics",
+                      "domains:users"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/domains": {
+      "get": {
+        "summary": "List all domains",
+        "description": "Get a paginated list of domains. System admins see all domains, domain admins see only their assigned domains.\n\n**Required Token Ability:** `domains:view`",
+        "tags": ["Domains"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/typeParam"
+          },
+          {
+            "$ref": "#/components/parameters/statusParam"
+          },
+          {
+            "$ref": "#/components/parameters/searchParam"
+          },
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/perPageParam"
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "description": "Field to sort by",
+            "schema": {
+              "type": "string",
+              "enum": ["domain", "type", "created_at", "domain_id"],
+              "default": "domain"
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "description": "Sort order",
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "default": "asc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response with list of domains",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainCollection"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new domain",
+        "description": "Create a new domain. Only system administrators can create domains.\n\n**Required Token Ability:** `domains:create`",
+        "tags": ["Domains"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreDomainRequest"
+              },
+              "examples": {
+                "local_domain": {
+                  "summary": "Local Domain Example",
+                  "value": {
+                    "domain": "example.com",
+                    "type": "local",
+                    "max_accounts": 100,
+                    "quotas": 10240,
+                    "spamassassin": true,
+                    "sa_tag": 5,
+                    "sa_refuse": 15,
+                    "admin_user_id": "5"
+                  }
+                },
+                "alias_domain": {
+                  "summary": "Alias Domain Example",
+                  "value": {
+                    "domain": "alias.com",
+                    "type": "alias",
+                    "primary_domain_id": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Domain created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Domain created successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DomainDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Validation errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "description": "Conflict - Domain already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Domain 'example.com' already exists!",
+                  "errors": {
+                    "domain": ["Domain already exists"]
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/domains/search": {
+      "get": {
+        "summary": "Search domains",
+        "description": "Search for domains with advanced filters. System admins search all domains, domain admins search only their domains.\n\n**Required Token Ability:** `domains:view`",
+        "tags": ["Domains"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/searchParam"
+          },
+          {
+            "$ref": "#/components/parameters/typeParam"
+          },
+          {
+            "$ref": "#/components/parameters/statusParam"
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["domain", "type", "created_at", "domain_id"],
+              "default": "domain"
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "default": "asc"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/pageParam"
+          },
+          {
+            "$ref": "#/components/parameters/perPageParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainCollection"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/domains/limits": {
+      "get": {
+        "summary": "Get domain admin limits",
+        "description": "Get current usage statistics and limits for the authenticated domain administrator.\n\n**Required Token Ability:** `domains:view`\n\n**Note:** Only available to domain administrators.",
+        "tags": ["Domain Statistics"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin usage statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUsageStats"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "user": {
+                      "id": 5,
+                      "name": "John Doe",
+                      "email": "john@example.com",
+                      "role": "domain_admin"
+                    },
+                    "usage": {
+                      "domains": {
+                        "current": 3,
+                        "max": 10,
+                        "percentage": 30.0
+                      },
+                      "email_accounts": {
+                        "current": 45,
+                        "max": 100,
+                        "percentage": 45.0
+                      },
+                      "quota": {
+                        "current": 5120,
+                        "max": 10240,
+                        "percentage": 50.0,
+                        "current_formatted": "5.0 GB",
+                        "max_formatted": "10.0 GB"
+                      }
+                    },
+                    "domains": [
+                      {
+                        "domain_id": 1,
+                        "domain_name": "example.com",
+                        "current_accounts": 25,
+                        "max_accounts": 50,
+                        "available": 25,
+                        "percentage": 50.0,
+                        "is_full": false
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/domains/{identifier}": {
+      "get": {
+        "summary": "Get domain details",
